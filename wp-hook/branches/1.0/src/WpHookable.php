@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pollen\WpHook;
 
+use Pollen\Routing\RouteInterface;
 use Pollen\WpPost\WpPostQueryInterface;
 use Pollen\WpPost\WpPostProxy;
 use WP_Post;
@@ -12,6 +13,12 @@ class WpHookable implements WpHookableInterface
 {
     use WpHookerProxy;
     use WpPostProxy;
+
+    /**
+     * Nom de qualification.
+     * @var string
+     */
+    private $name;
 
     /**
      * Identifiant de qualification du post associé.
@@ -38,12 +45,14 @@ class WpHookable implements WpHookableInterface
     protected $wpPost;
 
     /**
+     * @param string $name
      * @param int $id
      * @param string $path
      * @param WpHookerInterface|null $wpHooker
      */
-    public function __construct(int $id, string $path, ?WpHookerInterface $wpHooker = null)
+    public function __construct(string $name, int $id, string $path, ?WpHookerInterface $wpHooker = null)
     {
+        $this->name = $name;
         $this->id = $id;
         $this->path = $path;
 
@@ -58,6 +67,14 @@ class WpHookable implements WpHookableInterface
     public function getId(): int
     {
         return $this->id;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getName(): string
+    {
+        return $this->name;
     }
 
     /**
@@ -83,6 +100,14 @@ class WpHookable implements WpHookableInterface
     /**
      * @inheritDoc
      */
+    public function getRoute(): ?RouteInterface
+    {
+        return $this->wpHooker()->getRoute($this->getName());
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function getWpPost(): ?WP_Post
     {
         if ($this->wpPost === null) {
@@ -90,5 +115,15 @@ class WpHookable implements WpHookableInterface
         }
 
         return $this->wpPost;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setRoute(RouteInterface $route): WpHookableInterface
+    {
+        $this->wpHooker()->setRoute($this, $route);
+
+        return $this;
     }
 }
