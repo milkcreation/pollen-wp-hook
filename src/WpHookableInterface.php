@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pollen\WpHook;
 
+use Pollen\Routing\RouteInterface;
 use Pollen\WpPost\WpPostProxyInterface;
 use Pollen\WpPost\WpPostQueryInterface;
 use WP_Post;
@@ -16,6 +17,13 @@ interface WpHookableInterface extends WpHookerProxyInterface, WpPostProxyInterfa
      * @return int
      */
     public function getId(): int;
+
+    /**
+     * Récupération du nom de qualification.
+     *
+     * @return string
+     */
+    public function getName(): string;
 
     /**
      * Récupération du chemin de l'url du post.
@@ -38,4 +46,20 @@ interface WpHookableInterface extends WpHookerProxyInterface, WpPostProxyInterfa
      * @return WP_Post|null
      */
     public function getWpPost(): ?WP_Post;
+
+    /**
+     * Récupération de la route associée.
+     *
+     * @return RouteInterface
+     */
+    public function getRoute(): ?RouteInterface;
+
+    /**
+     * Définition de la route associée.
+     *
+     * @param RouteInterface $route
+     *
+     * @return WpHookableInterface
+     */
+    public function setRoute(RouteInterface $route): WpHookableInterface;
 }

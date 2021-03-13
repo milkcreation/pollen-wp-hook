@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Pollen\WpHook;
 
-use InvalidArgumentException;
+use Pollen\Routing\RouteInterface;
 use Pollen\Support\Concerns\BootableTraitInterface;
 use Pollen\Support\Concerns\ConfigBagAwareTraitInterface;
-use Pollen\Support\ParamsBag;
 use Pollen\Support\Proxy\ContainerProxyInterface;
 use Pollen\WpPost\WpPostProxyInterface;
 
@@ -35,25 +34,77 @@ interface WpHookerInterface extends
     public function boot(): WpHookerInterface;
 
     /**
+     * Récupération de la liste des contenus d'accroche déclarés.
+     *
+     * @return array
+     */
+    public function all(): array;
+
+    /**
      * Récupération du conteneur d'accroche.
      *
-     * @param string $hook
+     * @param string $name
      *
      * @return WpHookableInterface|null
      */
-    public function get(string $hook): ?WpHookableInterface;
+    public function get(string $name): ?WpHookableInterface;
 
     /**
-     * Définition|Récupération|Instance des paramètres d'accroche.
+     * Récupération de la liste des noms de qualification des contenus d'accroche.
      *
-     * @param array|string|null $key
-     * @param mixed $default
-     *
-     * @return string|int|array|mixed|ParamsBag
-     *
-     * @throws InvalidArgumentException
+     * @return array
      */
-    public function getHooksBag($key = null, $default = null);
+    public function getHookNames(): array;
+
+    /**
+     * Récupération de la liste des identifiants de qualification Wordpress (post_id) des contenus d'accroche.
+     *
+     * @return array
+     */
+    public function getIds(): array;
+
+    /**
+     * Récupération de la liste des chemins vers le post Wordpress des contenus d'accroche.
+     *
+     * @return array
+     */
+    public function getPaths(): array;
+
+    /**
+     * Récupération de l'instance de la route associée à un contenu d'accroche.
+     *
+     * @param string $name
+     *
+     * @return RouteInterface|null
+     */
+    public function getRoute(string $name): ?RouteInterface;
+
+    /**
+     * Récupération de l'instance du contenu d'accroche associé à une route.
+     *
+     * @param RouteInterface $route
+     *
+     * @return WpHookableInterface|null
+     */
+    public function getRouteHookable(RouteInterface $route): ?WpHookableInterface;
+
+    /**
+     * Vérification d'existence d'un identifiant de qualification dans la liste des contenus d'accroche déclaré.
+     *
+     * @param int $id
+     *
+     * @return bool
+     */
+    public function hasId(int $id): bool;
+
+    /**
+     * Vérification d'existence d'un chemin dans la liste des contenus d'accroche déclaré.
+     *
+     * @param string $path
+     *
+     * @return bool
+     */
+    public function hasPath(string $path): bool;
 
     /**
      * Enregistrement des infos de routage dans le hooks_bag
@@ -65,6 +116,16 @@ interface WpHookerInterface extends
      * @return mixed
      */
     public function saveOption($value, string $option, $original_value);
+
+    /**
+     * Définition d'une route associé à une instance de contenu d'accroche.
+     *
+     * @param WpHookableInterface $hookable
+     * @param RouteInterface $route
+     *
+     * @return static
+     */
+    public function setRoute(WpHookableInterface $hookable, RouteInterface $route): WpHookerInterface;
 
     /**
      * Enregistrement des valeurs du hooksBag en base de données.

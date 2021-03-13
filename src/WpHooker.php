@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pollen\WpHook;
 
 use InvalidArgumentException;
+use Pollen\Routing\RouteInterface;
 use Pollen\Support\Concerns\BootableTrait;
 use Pollen\Support\Concerns\ConfigBagAwareTrait;
 use Pollen\Support\ParamsBag;
@@ -27,28 +28,40 @@ class WpHooker implements WpHookerInterface
     private static $instance;
 
     /**
+     * Instance du conteneur d'éléments d'accroche.
+     * @var ParamsBag
+     */
+    private $hooksBag;
+
+    /**
      * Activation de l'exécution de stockage en base de données.
      * @var bool
      */
     private $storage = false;
 
     /**
-     * Dépôt de contenu d'accroches.
+     * Dépôt des contenus d'accroche déclarés et instanciés.
      * @var WpHookableInterface[]
      */
     protected $hooks = [];
 
     /**
-     * Liste des éléments d'accroche.
-     * @var ParamsBag
+     * Liste des identifiants de qualification des éléments d'accroche déclarés.
+     * @var int[]
      */
-    protected $hooksBag;
+    protected $ids = [];
 
     /**
-     * Cartographie des noms de qualification d'accroche.
+     * Liste des chemins des éléments d'accroche déclarés.
      * @var string[]
      */
-    protected $hooksMap = [];
+    protected $paths = [];
+
+    /**
+     * Liste des routes associées aux éléments d'accroche déclarés.
+     * @var RouteInterface[]|array
+     */
+    protected $routes = [];
 
     /**
      * Cartographie des options.
@@ -96,7 +109,6 @@ class WpHooker implements WpHookerInterface
     public function addHookOption(string $hook, string $option): WpHookerInterface
     {
         if (!isset($this->hooksMap[$hook])) {
-            $this->hooksMap[$hook] = $option;
             $this->optionsMap[$option] = $hook;
         }
 
@@ -109,27 +121,40 @@ class WpHooker implements WpHookerInterface
     public function boot(): WpHookerInterface
     {
         if (!$this->isBooted()) {
-            add_action('admin_init', function () {
-                foreach (array_keys($this->optionsMap) as $option) {
-                    add_filter("sanitize_option_{$option}", [$this, 'saveOption'], 999999, 3);
+            add_action(
+                'admin_init',
+                function () {
+                    foreach (array_keys($this->optionsMap) as $option) {
+                        add_filter("sanitize_option_{$option}", [$this, 'saveOption'], 999999, 3);
+                    }
                 }
-            });
+            );
 
             $this->setBooted();
         }
+
+        return $this;
     }
 
     /**
      * @inheritDoc
      */
-    public function get(string $hook): ?WpHookableInterface
+    public function all(): array
     {
-        if(isset($this->hooks[$hook])) {
-            return $this->hooks[$hook];
+        return $this->getHooksBag()->all();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function get(string $name): ?WpHookableInterface
+    {
+        if (isset($this->hooks[$name])) {
+            return $this->hooks[$name];
         }
 
-        if (($args = $this->getHooksBag($hook)) && isset($args['id'], $args['path'])) {
-            return $this->hooks[$hook] = new WpHookable($args['id'], $args['path'], $this);
+        if (($args = $this->getHooksBag($name)) && isset($args['id'], $args['path'])) {
+            return $this->hooks[$name] = new WpHookable($name, $args['id'], $args['path'], $this);
         }
 
         return null;
@@ -138,7 +163,22 @@ class WpHooker implements WpHookerInterface
     /**
      * @inheritDoc
      */
-    public function getHooksBag($key = null, $default = null)
+    public function getHookNames(): array
+    {
+        return $this->getHooksBag()->keys();
+    }
+
+    /**
+     * Définition|Récupération|Instance des paramètres d'accroche.
+     *
+     * @param array|string|null $key
+     * @param mixed $default
+     *
+     * @return string|int|array|mixed|ParamsBag
+     *
+     * @throws InvalidArgumentException
+     */
+    protected function getHooksBag($key = null, $default = null)
     {
         if ($this->hooksBag === null) {
             $this->hooksBag = new ParamsBag(get_option('hooks_bag') ?: []);
@@ -158,6 +198,80 @@ class WpHooker implements WpHookerInterface
         }
 
         throw new InvalidArgumentException('Invalid HooksBag passed method arguments');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getIds(): array
+    {
+        if (!array_diff(array_keys($this->ids), $this->getHookNames())) {
+            return $this->ids;
+        }
+
+        foreach ($this->all() as $name => $attrs) {
+            if ($id = $attrs['id'] ?? 0) {
+                $this->ids[$name] = $id;
+            }
+        }
+
+        return $this->ids;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getPaths(): array
+    {
+        if (!array_diff(array_keys($this->paths), $this->getHookNames())) {
+            return $this->paths;
+        }
+
+        foreach ($this->all() as $name => $attrs) {
+            if ($path = $attrs['path'] ?? '') {
+                $this->paths[$name] = $path;
+            }
+        }
+
+        return $this->paths;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getRoute(string $name): ?RouteInterface
+    {
+        return $this->routes[$name] ?? null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getRouteHookable(RouteInterface $route): ?WpHookableInterface
+    {
+        $name = array_search($route, $this->routes, true);
+
+        if ($name !== false) {
+            return $this->get($name);
+        }
+
+        return null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function hasId(int $id): bool
+    {
+        return in_array($id, $this->getIds(), true);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function hasPath(string $path): bool
+    {
+        return in_array($path, $this->getPaths(), true);
     }
 
     /**
@@ -192,6 +306,27 @@ class WpHooker implements WpHookerInterface
         }
 
         return $value;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setRoute(WpHookableInterface $hookable, RouteInterface $route): WpHookerInterface
+    {
+        $exists = array_search($route, $this->routes, true);
+
+        if ($exists === false) {
+            $this->routes[$hookable->getName()] = $route;
+
+            return $this;
+        }
+        throw new RuntimeException(
+            sprintf(
+                'WpHooker could not associating route with hook [%s]. This route is already used by the hook [%s]',
+                $hookable->getName(),
+                $exists
+            )
+        );
     }
 
     /**
