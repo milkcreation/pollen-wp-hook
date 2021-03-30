@@ -18,7 +18,7 @@ interface WpHookerProxyInterface
      *
      * @param WpHookerInterface $wpHooker
      *
-     * @return static
+     * @return void
      */
-    public function setWpHooker(WpHookerInterface $wpHooker): self;
+    public function setWpHooker(WpHookerInterface $wpHooker): void;
 }
