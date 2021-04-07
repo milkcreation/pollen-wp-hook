@@ -300,7 +300,7 @@ class WpHooker implements WpHookerInterface
         if (is_numeric($value) &&
             $value > 0 &&
             ($hook = $this->optionsMap[$option] ?? null) &&
-            ($post = $this->wpPost($value))
+            ($post = $this->wpPost()->post($value))
         ) {
             $this->registerHookBag($hook, $post->getId(), $post->getPath());
         }
