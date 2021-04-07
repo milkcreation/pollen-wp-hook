@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Pollen\WpHook;
 
-use Psr\Container\ContainerInterface as Container;
+use InvalidArgumentException;
+use Pollen\Support\StaticProxy;
 use RuntimeException;
 
 /**
@@ -19,27 +20,35 @@ trait WpHookerProxy
     private $wpHooker;
 
     /**
-     * Instance du gestionnaire de contenus d'accroche Wordpress.
+     * Instance du gestionnaire de contenus d'accroche Wordpress|Instance d'un contenu d'accroche
      *
-     * @return WpHookerInterface
+     * @param string|null $name
+     *
+     * @return WpHookerInterface|WpHookableInterface
      */
-    public function wpHooker(): WpHookerInterface
+    public function wpHooker(?string $name = null)
     {
         if ($this->wpHooker === null) {
-            $container = method_exists($this, 'getContainer') ? $this->getContainer() : null;
-
-            if ($container instanceof Container && $container->has(WpHookerInterface::class)) {
-                $this->wpHooker = $container->get(WpHookerInterface::class);
-            } else {
-                try {
-                    $this->wpHooker = WpHooker::getInstance();
-                } catch(RuntimeException $e) {
-                    $this->wpHooker = new WpHooker();
-                }
+            try {
+                $this->wpHooker = WpHooker::getInstance();
+            } catch (RuntimeException $e) {
+                $this->wpHooker = StaticProxy::getProxyInstance(
+                    WpHookerInterface::class,
+                    WpHooker::class,
+                    method_exists($this, 'getContainer') ? $this->getContainer() : null
+                );
             }
         }
 
-        return $this->wpHooker;
+        if ($name === null) {
+            return $this->wpHooker;
+        }
+
+        if ($hookable = $this->wpHooker->get($name)) {
+            return $hookable;
+        }
+
+        throw new InvalidArgumentException(sprintf('Hookable [%s] is unavailable', $name));
     }
 
     /**

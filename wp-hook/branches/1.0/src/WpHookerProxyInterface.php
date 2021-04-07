@@ -7,11 +7,13 @@ namespace Pollen\WpHook;
 interface WpHookerProxyInterface
 {
     /**
-     * Instance du gestionnaire de contenus d'accroche Wordpress.
+     * Instance du gestionnaire de contenus d'accroche Wordpress|Instance d'un contenu d'accroche
      *
-     * @return WpHookerInterface
+     * @param string|null $name
+     *
+     * @return WpHookerInterface|WpHookableInterface|null
      */
-    public function wpHooker(): WpHookerInterface;
+    public function wpHooker(?string $name = null);
 
     /**
      * Définition du gestionnaire de contenus d'accroche Wordpress.
