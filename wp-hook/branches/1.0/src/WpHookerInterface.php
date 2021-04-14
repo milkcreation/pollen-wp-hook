@@ -21,10 +21,11 @@ interface WpHookerInterface extends
      *
      * @param string $hook
      * @param string $option
+     * @param array $params
      *
      * @return static
      */
-    public function addHookOption(string $hook, string $option): WpHookerInterface;
+    public function addHookOption(string $hook, string $option, array $params = []): WpHookerInterface;
 
     /**
      * Chargement.
@@ -41,13 +42,22 @@ interface WpHookerInterface extends
     public function all(): array;
 
     /**
-     * Récupération du conteneur d'accroche.
+     * Récupération du contenu d'accroche.
      *
      * @param string $name
      *
      * @return WpHookableInterface|null
      */
     public function get(string $name): ?WpHookableInterface;
+
+    /**
+     * Récupération du contenu d'accroche selon l'identifiant de qualification du post Wordpress associé.
+     *
+     * @param int $id
+     *
+     * @return WpHookableInterface|null
+     */
+    public function getById(int $id): ?WpHookableInterface;
 
     /**
      * Récupération de la liste des noms de qualification des contenus d'accroche.

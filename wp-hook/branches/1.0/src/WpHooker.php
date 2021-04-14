@@ -13,6 +13,7 @@ use Pollen\Support\Proxy\ContainerProxy;
 use Pollen\WpPost\WpPostProxy;
 use Psr\Container\ContainerInterface as Container;
 use RuntimeException;
+use WP_Post;
 
 class WpHooker implements WpHookerInterface
 {
@@ -70,6 +71,12 @@ class WpHooker implements WpHookerInterface
     protected $optionsMap = [];
 
     /**
+     * Cartographie de paramètres des éléments d'accroche.
+     * @var array[]
+     */
+    protected $paramsMap = [];
+
+    /**
      * @param array $config
      * @param Container|null $container
      */
@@ -106,10 +113,14 @@ class WpHooker implements WpHookerInterface
     /**
      * @inheritDoc
      */
-    public function addHookOption(string $hook, string $option): WpHookerInterface
+    public function addHookOption(string $hook, string $option, array $params = []): WpHookerInterface
     {
-        if (!isset($this->hooksMap[$hook])) {
+        if (!isset($this->optionsMap[$option])) {
             $this->optionsMap[$option] = $hook;
+
+            if ($params) {
+                $this->paramsMap[$hook] = $params;
+            }
         }
 
         return $this;
@@ -129,6 +140,26 @@ class WpHooker implements WpHookerInterface
                     }
                 }
             );
+
+            add_filter('display_post_states', function (array $post_states, WP_Post $post) {
+                if (($hook = $this->getById((int)$post->ID)) && ($state = $hook->getPostState())) {
+                    $post_states[] = $state;
+                }
+                return $post_states;
+            }, 10, 2);
+
+            add_action('edit_form_top', function (WP_Post $post) {
+                if (($hook = $this->getById((int)$post->ID)) && ($notice = $hook->getEditNotice())) {
+                    echo "<div class=\"notice notice-info inline\">\n\t<p>$notice</p>\n</div>";
+                }
+            });
+
+            add_action('save_post', function (int $post_id) {
+                if (($hook = $this->getById($post_id))) {
+                    $post = $this->wpPost($post_id);
+                    $this->registerHookBag($hook->getName(), $post_id, $post->getPath());
+                }
+            });
 
             $this->setBooted();
         }
@@ -154,7 +185,24 @@ class WpHooker implements WpHookerInterface
         }
 
         if (($args = $this->getHooksBag($name)) && isset($args['id'], $args['path'])) {
-            return $this->hooks[$name] = new WpHookable($name, $args['id'], $args['path'], $this);
+            $hookable = new WpHookable($name, $args['id'], $args['path'], $this);
+            $hookable->setParams($this->paramsMap[$name] ?? []);
+
+            return $this->hooks[$name] = $hookable;
+        }
+
+        return null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getById(int $id): ?WpHookableInterface
+    {
+        $ids = $this->getIds();
+
+        if ($name = $ids[$id] ?? null) {
+            return $this->get($name);
         }
 
         return null;
@@ -205,13 +253,13 @@ class WpHooker implements WpHookerInterface
      */
     public function getIds(): array
     {
-        if (!array_diff(array_keys($this->ids), $this->getHookNames())) {
+        if ($this->ids && !array_diff(array_keys($this->ids), $this->getHookNames())) {
             return $this->ids;
         }
 
         foreach ($this->all() as $name => $attrs) {
             if ($id = $attrs['id'] ?? 0) {
-                $this->ids[$name] = $id;
+                $this->ids[$id] = $name;
             }
         }
 
@@ -300,7 +348,7 @@ class WpHooker implements WpHookerInterface
         if (is_numeric($value) &&
             $value > 0 &&
             ($hook = $this->optionsMap[$option] ?? null) &&
-            ($post = $this->wpPost()->post($value))
+            ($post = $this->wpPost($value))
         ) {
             $this->registerHookBag($hook, $post->getId(), $post->getPath());
         }
