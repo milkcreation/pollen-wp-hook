@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Pollen\WpHook;
 
 use Pollen\Routing\RouteInterface;
+use Pollen\Support\Concerns\ParamsBagAwareTrait;
 use Pollen\WpPost\WpPostQueryInterface;
 use Pollen\WpPost\WpPostProxy;
 use WP_Post;
 
 class WpHookable implements WpHookableInterface
 {
+    use ParamsBagAwareTrait;
     use WpHookerProxy;
     use WpPostProxy;
 
@@ -62,12 +64,59 @@ class WpHookable implements WpHookableInterface
     }
 
     /**
+     * Liste des paramètres par défaut.
+     *
+     * @return array
+     */
+    public function defaultParams(): array
+    {
+        return [
+            /**
+             * Intitulé de qualification.
+             * @var string $label
+             */
+            'label'     => $this->getName(),
+            /**
+             * Indicateur dans la liste des posts de l'interface d'administration Wordpress.
+             * @var bool|string $post_state
+             */
+            'post_state' => true,
+            /**
+             * Message de notification de l'édition du post de l'interface d'administration Wordpress.
+             * @var bool|string $post_state
+             */
+            'edit_notice' => true
+        ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getEditNotice(): string
+    {
+        if ($editNotice = $this->params('edit_notice')) {
+            return is_string($editNotice)
+                ? $editNotice : sprintf('Vous éditez la page de contenu : %s', $this->getLabel());
+        }
+        return '';
+    }
+
+    /**
      * @inheritDoc
      */
     public function getId(): int
     {
         return $this->id;
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getLabel(): string
+    {
+        return $this->params('label', '');
+    }
+
 
     /**
      * @inheritDoc
@@ -95,6 +144,18 @@ class WpHookable implements WpHookableInterface
         }
 
         return $this->post;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getPostState(): string
+    {
+        if ($postState = $this->params('post_state')) {
+            return is_string($postState)
+                ? $postState : sprintf('Page de contenu : %s', $this->getLabel());
+        }
+        return '';
     }
 
     /**
