@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Pollen\WpHook;
 
-use InvalidArgumentException;
+use Pollen\Support\Exception\ProxyInvalidArgumentException;
 use Pollen\Support\StaticProxy;
 use RuntimeException;
 
@@ -48,7 +48,7 @@ trait WpHookerProxy
             return $hookable;
         }
 
-        throw new InvalidArgumentException(sprintf('Hookable [%s] is unavailable', $name));
+        throw new ProxyInvalidArgumentException(sprintf('Hookable [%s] is unavailable', $name));
     }
 
     /**
