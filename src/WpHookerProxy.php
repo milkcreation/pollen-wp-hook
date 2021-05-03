@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Pollen\WpHook;
 
 use Pollen\Support\Exception\ProxyInvalidArgumentException;
-use Pollen\Support\StaticProxy;
+use Pollen\Support\ProxyResolver;
 use RuntimeException;
 
 /**
@@ -32,7 +32,7 @@ trait WpHookerProxy
             try {
                 $this->wpHooker = WpHooker::getInstance();
             } catch (RuntimeException $e) {
-                $this->wpHooker = StaticProxy::getProxyInstance(
+                $this->wpHooker = ProxyResolver::getInstance(
                     WpHookerInterface::class,
                     WpHooker::class,
                     method_exists($this, 'getContainer') ? $this->getContainer() : null
