@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Pollen\WpHook;
 
-use Pollen\Container\BaseServiceProvider;
+use Pollen\Container\BootableServiceProvider;
 
-class WpHookServiceProvider extends BaseServiceProvider
+class WpHookServiceProvider extends BootableServiceProvider
 {
     /**
      * @var string[]

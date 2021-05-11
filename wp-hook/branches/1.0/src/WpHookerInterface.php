@@ -37,7 +37,7 @@ interface WpHookerInterface extends
     /**
      * Récupération de la liste des contenus d'accroche déclarés.
      *
-     * @return array
+     * @return WpHookableInterface[]|array
      */
     public function all(): array;
 
@@ -62,21 +62,21 @@ interface WpHookerInterface extends
     /**
      * Récupération de la liste des noms de qualification des contenus d'accroche.
      *
-     * @return array
+     * @return string[]|array
      */
     public function getHookNames(): array;
 
     /**
      * Récupération de la liste des identifiants de qualification Wordpress (post_id) des contenus d'accroche.
      *
-     * @return array
+     * @return int[]|array
      */
     public function getIds(): array;
 
     /**
      * Récupération de la liste des chemins vers le post Wordpress des contenus d'accroche.
      *
-     * @return array
+     * @return string[]|array
      */
     public function getPaths(): array;
 
