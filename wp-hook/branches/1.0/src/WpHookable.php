@@ -140,7 +140,7 @@ class WpHookable implements WpHookableInterface
     public function getPost(): ?WpPostQueryInterface
     {
         if ($this->post === null) {
-            $this->post = $this->WpPost()->post($this->id);
+            $this->post = $this->WpPost()->get($this->id);
         }
 
         return $this->post;
