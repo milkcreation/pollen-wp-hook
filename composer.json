@@ -1,7 +1,7 @@
 {
   "name": "pollen-solutions/wp-hook",
   "description": "Pollen Wordpress Hook Component.",
-  "homepage": "https://www.presstify.com/pollen-solutions/wp-hook/",
+  "homepage": "https://github.com/milkcreation/pollen-wp-hook.git",
   "keywords": [
     "pollen-solutions",
     "component",
@@ -9,19 +9,12 @@
     "hook",
     "post"
   ],
-  "time": "2021-05-27",
+  "time": "2021-09-15",
   "license": "MIT",
   "authors": [
     {
       "name": "Jordy Manner",
-      "email": "jordy@presstify.com",
-      "role": "Developper"
-    }
-  ],
-  "repositories": [
-    {
-      "type": "composer",
-      "url": "https://composer.presstify.com/pollen-solutions/"
+      "email": "jordy@presstify.com"
     }
   ],
   "require": {
